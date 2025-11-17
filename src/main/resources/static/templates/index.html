@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>漫画阅读系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+            margin-bottom: 2rem;
+            border-radius: 10px;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .section {
+            background: white;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h2 {
+            color: #667eea;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 0.5rem;
+        }
+        
+        .api-test {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        
+        .api-test h3 {
+            color: #495057;
+            margin-bottom: 1rem;
+        }
+        
+        .test-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        input, button {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        input {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #5a6fd8;
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .result {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 1rem;
+            margin-top: 1rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        
+        .success {
+            border-left: 4px solid #28a745;
+        }
+        
+        .error {
+            border-left: 4px solid #dc3545;
+        }
+        
+        .loading {
+            color: #6c757d;
+            text-align: center;
+            padding: 1rem;
+        }
+        
+        .comic-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+        
+        .comic-card {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+        }
+        
+        .comic-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .comic-cover {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+        }
+        
+        .comic-info {
+            padding: 1rem;
+        }
+        
+        .comic-title {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+        
+        .comic-author {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+        }
+        
+        .status-ongoing {
+            background: #e7f3ff;
+            color: #1890ff;
+        }
+        
+        .status-completed {
+            background: #f6ffed;
+            color: #52c41a;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📚 漫画阅读系统</h1>
+            <div class="subtitle">Comic Reader System - 前端测试页面</div>
+        </header>
+
+        <!-- 健康检查 -->
+        <section class="section">
+            <h2>🩺 服务状态检查</h2>
+            <div class="api-test">
+                <h3>健康检查接口</h3>
+                <div class="test-controls">
+                    <button onclick="testHealth()">测试服务状态</button>
+                </div>
+                <div id="health-result" class="result"></div>
+            </div>
+        </section>
+
+        <!-- 漫画管理 -->
+        <section class="section">
+            <h2>📖 漫画管理</h2>
+            
+            <div class="api-test">
+                <h3>获取漫画列表</h3>
+                <div class="test-controls">
+                    <input type="text" id="search-keyword" placeholder="搜索关键词（可选）">
+                    <button onclick="getComics()">获取漫画列表</button>
+                </div>
+                <div id="comics-result" class="result"></div>
+            </div>
+
+            <div class="api-test">
+                <h3>获取漫画详情</h3>
+                <div class="test-controls">
+                    <input type="number" id="comic-id" placeholder="输入漫画ID" value="1">
+                    <button onclick="getComicDetail()">获取漫画详情</button>
+                </div>
+                <div id="comic-detail-result" class="result"></div>
+            </div>
+        </section>
+
+        <!-- 漫画列表展示 -->
+        <section class="section">
+            <h2>🎨 漫画展示</h2>
+            <div id="comics-display" class="comic-grid">
+                <div class="loading">点击"获取漫画列表"加载数据...</div>
+            </div>
+        </section>
+
+        <!-- 章节管理 -->
+        <section class="section">
+            <h2>📑 章节管理</h2>
+            
+            <div class="api-test">
+                <h3>获取漫画章节</h3>
+                <div class="test-controls">
+                    <input type="number" id="chapter-comic-id" placeholder="漫画ID" value="1">
+                    <button onclick="getChapters()">获取章节列表</button>
+                </div>
+                <div id="chapters-result" class="result"></div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api';
+        
+        // 通用请求函数
+        async function apiRequest(endpoint, options = {}) {
+            const url = `${API_BASE}${endpoint}`;
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                });
+                
+                const data = await response.json();
+                return { success: true, data, status: response.status };
+            } catch (error) {
+                return { success: false, error: error.message };
+            }
+        }
+        
+        // 显示结果
+        function displayResult(elementId, result, isSuccess = true) {
+            const element = document.getElementById(elementId);
+            element.className = `result ${isSuccess ? 'success' : 'error'}`;
+            element.innerHTML = `<pre>${JSON.stringify(result, null, 2)}</pre>`;
+        }
+        
+        // 测试健康检查
+        async function testHealth() {
+            const resultElement = document.getElementById('health-result');
+            resultElement.innerHTML = '<div class="loading">检查服务状态中...</div>';
+            
+            const result = await apiRequest('/health');
+            displayResult('health-result', result, result.success);
+        }
+        
+        // 获取漫画列表
+        async function getComics() {
+            const keyword = document.getElementById('search-keyword').value;
+            const resultElement = document.getElementById('comics-result');
+            resultElement.innerHTML = '<div class="loading">加载漫画列表中...</div>';
+            
+            let endpoint = '/comics';
+            if (keyword) {
+                endpoint += `?keyword=${encodeURIComponent(keyword)}`;
+            }
+            
+            const result = await apiRequest(endpoint);
+            displayResult('comics-result', result, result.success);
+            
+            // 同时更新漫画展示区域
+            if (result.success && result.data && result.data.data) {
+                displayComics(result.data.data.list || []);
+            }
+        }
+        
+        // 获取漫画详情
+        async function getComicDetail() {
+            const comicId = document.getElementById('comic-id').value;
+            if (!comicId) {
+                alert('请输入漫画ID');
+                return;
+            }
+            
+            const resultElement = document.getElementById('comic-detail-result');
+            resultElement.innerHTML = '<div class="loading">加载漫画详情中...</div>';
+            
+            const result = await apiRequest(`/comics/${comicId}`);
+            displayResult('comic-detail-result', result, result.success);
+        }
+        
+        // 获取章节列表
+        async function getChapters() {
+            const comicId = document.getElementById('chapter-comic-id').value;
+            if (!comicId) {
+                alert('请输入漫画ID');
+                return;
+            }
+            
+            const resultElement = document.getElementById('chapters-result');
+            resultElement.innerHTML = '<div class="loading">加载章节列表中...</div>';
+            
+            const result = await apiRequest(`/chapters/comic/${comicId}`);
+            displayResult('chapters-result', result, result.success);
+        }
+        
+        // 显示漫画卡片
+        function displayComics(comics) {
+            const container = document.getElementById('comics-display');
+            
+            if (!comics || comics.length === 0) {
+                container.innerHTML = '<div class="loading">没有找到漫画</div>';
+                return;
+            }
+            
+            container.innerHTML = comics.map(comic => `
+                <div class="comic-card" onclick="viewComicDetail(${comic.id})">
+                    <img src="${comic.coverImage || '/images/default-cover.jpg'}" 
+                         alt="${comic.title}" 
+                         class="comic-cover"
+                         onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuWbvuWDj+WbvuiusDwvdGV4dD48L3N2Zz4='">
+                    <div class="comic-info">
+                        <div class="comic-title">${comic.title}</div>
+                        <div class="comic-author">${comic.author || '未知作者'}</div>
+                        <span class="status ${comic.status === 1 ? 'status-ongoing' : 'status-completed'}">
+                            ${comic.status === 1 ? '连载中' : '已完结'}
+                        </span>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // 查看漫画详情
+        function viewComicDetail(comicId) {
+            document.getElementById('comic-id').value = comicId;
+            getComicDetail();
+        }
+        
+        // 页面加载时自动测试健康状态
+        window.onload = function() {
+            testHealth();
+        };
+    </script>
+</body>
+</html>

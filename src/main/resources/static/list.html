@@ -1,0 +1,23 @@
+<!-- comic/list.html -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>漫画列表</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>漫画列表</h1>
+        <div class="comic-grid">
+            <div th:each="comic : ${comics}" class="comic-item">
+                <a th:href="@{/comic/{id}(id=${comic.id})}">
+                    <img th:src="@{/api/file/{filename}(filename=${comic.coverImage})}" 
+                         alt="封面" class="comic-cover">
+                    <h3 th:text="${comic.title}"></h3>
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
