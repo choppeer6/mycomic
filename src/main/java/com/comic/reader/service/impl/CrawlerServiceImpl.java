@@ -9,7 +9,7 @@ import com.comic.reader.mapper.ChapterMapper;
 import com.comic.reader.mapper.ComicMapper;
 import com.comic.reader.mapper.PageMapper;
 import com.comic.reader.service.CrawlerService;
-import com.comic.reader.util.FileUtil;
+import com.comic.reader.service.StorageService;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -22,8 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.*;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,6 +41,8 @@ public class CrawlerServiceImpl implements CrawlerService {
     private PageMapper pageMapper;
     @Autowired
     private CategoryMapper categoryMapper;
+    @Autowired
+    private StorageService storageService;
 
     @Value("${file.upload-dir:uploads/}")
     private String uploadDir;
@@ -53,8 +53,112 @@ public class CrawlerServiceImpl implements CrawlerService {
     @Override
     @Transactional
     public void crawlComic(String url) {
-        // ... (之前的爬虫代码保持不变) ...
-        // 为了节省篇幅，这里省略之前的爬虫代码，实际文件中请保留
+        try {
+            log.info("开始抓取漫画: {}", url);
+            Document doc = Jsoup.connect(url).userAgent(USER_AGENT).get();
+
+            // 1. 解析漫画基本信息 (需要根据目标网站修改选择器)
+            String title = doc.select("h1.title").text(); 
+            String author = doc.select("span.author").text();
+            String desc = doc.select("div.summary").text();
+            String coverUrl = doc.select("img.cover").attr("src");
+
+            if (title.isEmpty()) {
+                log.error("无法解析标题，请检查选择器");
+                return;
+            }
+
+            // 检查是否已存在
+            if (!comicMapper.selectByKeyword(title).isEmpty()) {
+                log.info("漫画已存在: {}", title);
+                return;
+            }
+
+            // 下载封面并上传到 MinIO
+            String coverPath = downloadImage(coverUrl, "covers");
+
+            // 保存漫画
+            Comic comic = new Comic();
+            comic.setTitle(title);
+            comic.setAuthor(author);
+            comic.setDescription(desc);
+            comic.setCoverImage(coverPath); // 存完整URL
+            comic.setStatus(1);
+            comic.setCreateTime(Instant.now());
+            comic.setUpdateTime(Instant.now());
+            
+            // 默认分类
+            Category defaultCat = categoryMapper.selectById(1L);
+            if (defaultCat != null) {
+                comic.setCategoryId(defaultCat);
+            }
+
+            comicMapper.insert(comic);
+            log.info("漫画保存成功: {}", title);
+
+            // 2. 解析章节列表
+            Elements chapterLinks = doc.select("ul.chapter-list li a");
+            List<Element> linksList = new ArrayList<>(chapterLinks);
+            Collections.reverse(linksList);
+
+            int chapterNum = 1;
+            for (Element link : linksList) {
+                String chapterUrl = link.attr("abs:href");
+                String chapterTitle = link.text();
+                
+                crawlChapter(comic, chapterNum++, chapterTitle, chapterUrl);
+                Thread.sleep(1000);
+            }
+
+        } catch (Exception e) {
+            log.error("抓取失败", e);
+            throw new RuntimeException("抓取失败: " + e.getMessage());
+        }
+    }
+
+    private void crawlChapter(Comic comic, int chapterNum, String title, String url) {
+        try {
+            log.info("开始抓取章节: {} - {}", title, url);
+            Document doc = Jsoup.connect(url).userAgent(USER_AGENT).get();
+
+            // 保存章节
+            Chapter chapter = new Chapter();
+            chapter.setComic(comic);
+            chapter.setChapterNumber(chapterNum);
+            chapter.setTitle(title);
+            chapter.setCreateTime(Instant.now());
+            chapterMapper.insert(chapter);
+
+            // 3. 解析图片列表
+            Elements images = doc.select("div.comic-content img");
+            
+            int pageNum = 1;
+            for (Element img : images) {
+                String imgUrl = img.attr("abs:src");
+                if (imgUrl.isEmpty()) {
+                    imgUrl = img.attr("abs:data-src");
+                }
+
+                if (!imgUrl.isEmpty()) {
+                    // 下载图片并上传到 MinIO
+                    String savePath = "comics/" + comic.getId() + "/chapter_" + chapter.getId();
+                    String minioUrl = downloadImage(imgUrl, savePath);
+
+                    Page page = new Page();
+                    page.setChapter(chapter);
+                    page.setPageNumber(pageNum++);
+                    page.setImagePath(minioUrl); // 存完整URL
+                    page.setCreateTime(Instant.now());
+                    pageMapper.insert(page);
+                }
+            }
+            
+            chapter.setPageCount(pageNum - 1);
+            chapterMapper.update(chapter);
+
+        } catch (Exception e) {
+            log.error("章节抓取失败: " + title, e);
+        }
     }
 
     @Override
@@ -94,7 +198,6 @@ public class CrawlerServiceImpl implements CrawlerService {
         // 1. 检查或创建漫画
         Comic comic;
         List<Comic> exist = comicMapper.selectByKeyword(title);
-        // 精确匹配标题
         comic = exist.stream().filter(c -> c.getTitle().equals(title)).findFirst().orElse(null);
 
         if (comic == null) {
@@ -106,7 +209,6 @@ public class CrawlerServiceImpl implements CrawlerService {
             comic.setCreateTime(Instant.now());
             comic.setUpdateTime(Instant.now());
             
-            // 默认分类
             Category defaultCat = categoryMapper.selectById(1L);
             if (defaultCat != null) {
                 comic.setCategoryId(defaultCat);
@@ -120,19 +222,18 @@ public class CrawlerServiceImpl implements CrawlerService {
             name.toLowerCase().startsWith("cover.") || name.toLowerCase().equals("folder.jpg")
         );
         if (coverFiles != null && coverFiles.length > 0) {
-            String coverPath = copyFileToStandardDir(coverFiles[0], "covers");
-            comic.setCoverImage("/images/" + coverPath); // 存相对路径
+            // 上传到 MinIO
+            String coverUrl = storageService.upload(coverFiles[0], "covers/" + System.currentTimeMillis() + "_" + coverFiles[0].getName());
+            comic.setCoverImage(coverUrl); // 存完整URL
             comicMapper.update(comic);
         }
 
         // 3. 处理章节
         File[] chapterDirs = comicDir.listFiles(File::isDirectory);
         if (chapterDirs != null) {
-            // 按文件名排序章节
             Arrays.sort(chapterDirs, Comparator.comparing(File::getName));
 
             int chapterNum = 1;
-            // 如果已经有章节，接着后面的序号
             Integer maxChapter = chapterMapper.selectMaxChapterNumber(comic.getId());
             if (maxChapter != null) {
                 chapterNum = maxChapter + 1;
@@ -146,9 +247,6 @@ public class CrawlerServiceImpl implements CrawlerService {
 
     private void importSingleChapter(Comic comic, File chapterDir, int chapterNum) {
         String chapterTitle = chapterDir.getName();
-        
-        // 检查章节是否已存在 (简单通过标题判断，防止重复导入)
-        // 这里为了简化，假设每次都是新导入，或者你可以添加逻辑跳过已存在的章节
         
         Chapter chapter = new Chapter();
         chapter.setComic(comic);
@@ -164,19 +262,20 @@ public class CrawlerServiceImpl implements CrawlerService {
         });
 
         if (images != null) {
-            // 按文件名排序图片
             Arrays.sort(images, Comparator.comparing(File::getName));
 
             int pageNum = 1;
-            String saveSubDir = "comic_" + comic.getId() + "/chapter_" + chapter.getId();
+            String saveSubDir = "comics/" + comic.getId() + "/chapter_" + chapter.getId();
             
             for (File image : images) {
-                String savedPath = copyFileToStandardDir(image, saveSubDir);
+                // 上传到 MinIO
+                String fileName = System.currentTimeMillis() + "_" + image.getName();
+                String minioUrl = storageService.upload(image, saveSubDir + "/" + fileName);
                 
                 Page page = new Page();
                 page.setChapter(chapter);
                 page.setPageNumber(pageNum++);
-                page.setImagePath(savedPath);
+                page.setImagePath(minioUrl); // 存完整URL
                 page.setCreateTime(Instant.now());
                 pageMapper.insert(page);
             }
@@ -186,30 +285,35 @@ public class CrawlerServiceImpl implements CrawlerService {
         }
     }
 
-    private String copyFileToStandardDir(File source, String subDir) {
+    private String downloadImage(String imageUrl, String subDir) {
         try {
-            File destDir = new File(uploadDir, subDir);
-            if (!destDir.exists()) {
-                destDir.mkdirs();
+            URL url = new URL(imageUrl);
+            String fileName = System.currentTimeMillis() + "_" + new File(url.getPath()).getName();
+            
+            // 确保文件名合法
+            fileName = fileName.replaceAll("[^a-zA-Z0-9._-]", "");
+            if (fileName.length() > 50) fileName = fileName.substring(fileName.length() - 50);
+
+            try (BufferedInputStream in = new BufferedInputStream(url.openStream());
+                 ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+                byte[] buffer = new byte[1024];
+                int bytesRead;
+                while ((bytesRead = in.read(buffer)) != -1) {
+                    out.write(buffer, 0, bytesRead);
+                }
+                
+                // 上传到 MinIO
+                // 简单推断类型
+                String contentType = "application/octet-stream";
+                if (fileName.endsWith(".jpg")) contentType = "image/jpeg";
+                else if (fileName.endsWith(".png")) contentType = "image/png";
+                
+                return storageService.upload(out.toByteArray(), contentType, subDir + "/" + fileName);
             }
             
-            // 生成新文件名，防止冲突，或者保持原名
-            // 这里保持原名，但加上时间戳前缀防止重名
-            String fileName = System.currentTimeMillis() + "_" + source.getName();
-            File destFile = new File(destDir, fileName);
-            
-            Files.copy(source.toPath(), destFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            
-            return subDir + "/" + fileName;
         } catch (IOException e) {
-            log.error("文件复制失败: " + source.getAbsolutePath(), e);
-            throw new RuntimeException("文件复制失败");
+            log.error("图片下载失败: " + imageUrl, e);
+            return "";
         }
-    }
-    
-    // 辅助方法：下载图片 (保留之前的实现)
-    private String downloadImage(String imageUrl, String subDir) {
-        // ... (保留之前的实现)
-        return "";
     }
 }

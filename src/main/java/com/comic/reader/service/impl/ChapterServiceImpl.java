@@ -9,6 +9,7 @@ import com.comic.reader.entity.Page;
 import com.comic.reader.mapper.ChapterMapper;
 import com.comic.reader.mapper.ComicMapper;
 import com.comic.reader.mapper.PageMapper;
+import com.comic.reader.service.StorageService;
 import com.comic.reader.util.FileUtil;
 import com.comic.reader.vo.ChapterVO;
 import com.comic.reader.vo.PageVO;
@@ -39,6 +40,9 @@ public class ChapterServiceImpl implements ChapterService {
 
     @Autowired
     private ComicMapper comicMapper;
+    
+    @Autowired
+    private StorageService storageService;
 
     @Value("${file.upload-dir:uploads/}")
     private String uploadDir;
@@ -89,29 +93,22 @@ public class ChapterServiceImpl implements ChapterService {
     }
 
     private void saveChapterPages(Chapter chapter, List<MultipartFile> files) {
-        // 创建章节目录: uploads/comic_{id}/chapter_{id}/
-        String chapterPath = "comic_" + chapter.getComic().getId() + File.separator + "chapter_" + chapter.getId();
-        File saveDir = new File(uploadDir, chapterPath);
-        if (!saveDir.exists()) {
-            saveDir.mkdirs();
-        }
-
         int pageNum = 1;
+        String saveSubDir = "comics/" + chapter.getComic().getId() + "/chapter_" + chapter.getId();
+        
         for (MultipartFile file : files) {
             if (file.isEmpty()) continue;
 
             String fileName = FileUtil.generateFileName(file.getOriginalFilename());
-            File destFile = new File(saveDir, fileName);
             
-            // 保存文件
-            FileUtil.saveFile(file, destFile.getAbsolutePath());
+            // 上传到 MinIO
+            String minioUrl = storageService.upload(file, saveSubDir + "/" + fileName);
 
             // 保存页面记录
             Page page = new Page();
             page.setChapter(chapter);
             page.setPageNumber(pageNum++);
-            // 存储相对路径，方便前端访问
-            page.setImagePath(chapterPath + "/" + fileName); 
+            page.setImagePath(minioUrl); // 存完整URL
             page.setCreateTime(Instant.now());
             
             pageMapper.insert(page);
