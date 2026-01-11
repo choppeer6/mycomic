@@ -3,390 +3,754 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>漫画阅读系统</title>
+    <title>MyComic - 漫画阅读</title>
+    <link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
+        :root {
+            --primary-color: #ff6b6b;
+            --secondary-color: #4ecdc4;
+            --text-color: #2d3436;
+            --bg-color: #f7f9fc;
+            --card-bg: #ffffff;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
-            font-family: 'Microsoft YaHei', sans-serif;
-            background-color: #f5f5f5;
-            color: #333;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
             line-height: 1.6;
         }
-        
+
+        /* 导航栏 */
+        .navbar {
+            background-color: var(--card-bg);
+            padding: 1rem 2rem;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-link {
+            color: var(--text-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .nav-link:hover {
+            color: var(--primary-color);
+        }
+
+        .search-bar {
+            display: flex;
+            background: #f1f3f5;
+            border-radius: 20px;
+            padding: 0.5rem 1rem;
+            align-items: center;
+        }
+
+        .search-input {
+            border: none;
+            background: transparent;
+            outline: none;
+            padding-left: 0.5rem;
+            width: 200px;
+        }
+
+        /* 主要内容区 */
         .container {
             max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
+            margin: 2rem auto;
+            padding: 0 1rem;
         }
-        
-        header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
+        /* 轮播图/推荐区 */
+        .hero-section {
+            margin-bottom: 3rem;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+            height: 400px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
             color: white;
-            padding: 2rem 0;
             text-align: center;
-            margin-bottom: 2rem;
-            border-radius: 10px;
         }
-        
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 0.5rem;
-        }
-        
-        .subtitle {
-            font-size: 1.2rem;
-            opacity: 0.9;
-        }
-        
-        .section {
-            background: white;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        
-        h2 {
-            color: #667eea;
+
+        .hero-content h1 {
+            font-size: 3rem;
             margin-bottom: 1rem;
-            border-bottom: 2px solid #f0f0f0;
+        }
+
+        /* 分类标签 */
+        .categories {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            overflow-x: auto;
             padding-bottom: 0.5rem;
         }
-        
-        .api-test {
-            background: #f8f9fa;
-            padding: 1.5rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-        }
-        
-        .api-test h3 {
-            color: #495057;
-            margin-bottom: 1rem;
-        }
-        
-        .test-controls {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 1rem;
-            flex-wrap: wrap;
-        }
-        
-        input, button {
-            padding: 10px 15px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-        
-        input {
-            flex: 1;
-            min-width: 200px;
-        }
-        
-        button {
-            background: #667eea;
-            color: white;
-            border: none;
+
+        .category-tag {
+            padding: 0.5rem 1.5rem;
+            background: var(--card-bg);
+            border-radius: 20px;
             cursor: pointer;
-            transition: background 0.3s;
+            transition: var(--transition);
+            white-space: nowrap;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
-        
-        button:hover {
-            background: #5a6fd8;
+
+        .category-tag:hover, .category-tag.active {
+            background: var(--primary-color);
+            color: white;
         }
-        
-        button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-        
-        .result {
-            background: white;
-            border: 1px solid #e9ecef;
-            border-radius: 5px;
-            padding: 1rem;
-            margin-top: 1rem;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        
-        pre {
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-        }
-        
-        .success {
-            border-left: 4px solid #28a745;
-        }
-        
-        .error {
-            border-left: 4px solid #dc3545;
-        }
-        
-        .loading {
-            color: #6c757d;
-            text-align: center;
-            padding: 1rem;
-        }
-        
+
+        /* 漫画网格 */
         .comic-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 1.5rem;
-            margin-top: 1rem;
+            gap: 2rem;
         }
-        
+
         .comic-card {
-            background: white;
-            border-radius: 8px;
+            background: var(--card-bg);
+            border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
             cursor: pointer;
+            position: relative;
         }
-        
+
         .comic-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.15);
         }
-        
+
+        .comic-cover-wrapper {
+            position: relative;
+            padding-top: 140%; /* 5:7 比例 */
+            overflow: hidden;
+        }
+
         .comic-cover {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
-            height: 250px;
+            height: 100%;
             object-fit: cover;
+            transition: transform 0.5s ease;
         }
-        
+
+        .comic-card:hover .comic-cover {
+            transform: scale(1.05);
+        }
+
         .comic-info {
             padding: 1rem;
         }
-        
+
         .comic-title {
+            font-size: 1.1rem;
             font-weight: bold;
             margin-bottom: 0.5rem;
-            color: #333;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
-        
-        .comic-author {
+
+        .comic-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
             color: #666;
+        }
+
+        .status-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        /* 详情模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            width: 90%;
+            max-width: 800px;
+            border-radius: 15px;
+            overflow: hidden;
+            display: flex;
+            max-height: 80vh;
+            position: relative;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 10;
+            color: #666;
+        }
+
+        .modal-cover {
+            width: 300px;
+            object-fit: cover;
+        }
+
+        .modal-details {
+            padding: 2rem;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .chapter-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 10px;
+            margin-top: 1rem;
+        }
+
+        .chapter-item {
+            padding: 8px;
+            background: #f1f3f5;
+            text-align: center;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: var(--transition);
             font-size: 0.9rem;
         }
-        
-        .status {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 0.8rem;
-            margin-top: 0.5rem;
+
+        .chapter-item:hover {
+            background: var(--primary-color);
+            color: white;
         }
-        
-        .status-ongoing {
-            background: #e7f3ff;
-            color: #1890ff;
+
+        /* 阅读器样式 */
+        .reader-container {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #1a1a1a;
+            z-index: 3000;
+            overflow-y: auto;
         }
-        
-        .status-completed {
-            background: #f6ffed;
-            color: #52c41a;
+
+        .reader-container.active {
+            display: block;
+        }
+
+        .reader-toolbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 3001;
+            transition: transform 0.3s;
+        }
+
+        .reader-content {
+            max-width: 800px;
+            margin: 60px auto 0;
+            padding-bottom: 50px;
+        }
+
+        .reader-page {
+            width: 100%;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .reader-nav {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .nav-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+
+        .nav-btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+
+        /* 登录弹窗 */
+        .login-modal {
+            width: 400px;
+            padding: 2rem;
+            flex-direction: column;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #666;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            outline: none;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .loading-spinner {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+
+        .error-message {
+            text-align: center;
+            padding: 2rem;
+            color: var(--primary-color);
+        }
+
+        @media (max-width: 768px) {
+            .modal-content {
+                flex-direction: column;
+                overflow-y: auto;
+            }
+            .modal-cover {
+                width: 100%;
+                height: 200px;
+            }
+            .navbar {
+                padding: 1rem;
+            }
+            .search-input {
+                width: 120px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>📚 漫画阅读系统</h1>
-            <div class="subtitle">Comic Reader System - 前端测试页面</div>
-        </header>
 
-        <!-- 健康检查 -->
-        <section class="section">
-            <h2>🩺 服务状态检查</h2>
-            <div class="api-test">
-                <h3>健康检查接口</h3>
-                <div class="test-controls">
-                    <button onclick="testHealth()">测试服务状态</button>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <a href="#" class="logo" onclick="showHome()">
+            <i class="fas fa-book-open"></i> MyComic
+        </a>
+        <div class="nav-links">
+            <a href="#" class="nav-link" onclick="showHome()">首页</a>
+            <a href="#" class="nav-link">分类</a>
+            <a href="#" class="nav-link">排行</a>
+            <a href="#" class="nav-link" onclick="showLogin()">登录</a>
+        </div>
+        <div class="search-bar">
+            <i class="fas fa-search" style="color: #999;"></i>
+            <input type="text" class="search-input" placeholder="搜索漫画..." id="searchInput" onkeypress="handleSearch(event)">
+        </div>
+    </nav>
+
+    <!-- 主容器 -->
+    <div class="container" id="mainContainer">
+        <!-- 推荐区 -->
+        <div class="hero-section">
+            <div class="hero-content">
+                <h1>探索精彩漫画世界</h1>
+                <p>海量高清漫画，每日更新</p>
+            </div>
+        </div>
+
+        <!-- 分类标签 -->
+        <div class="categories">
+            <div class="category-tag active" onclick="filterCategory(null)">全部</div>
+            <div class="category-tag" onclick="filterCategory(1)">热血</div>
+            <div class="category-tag" onclick="filterCategory(2)">恋爱</div>
+            <div class="category-tag" onclick="filterCategory(3)">冒险</div>
+            <div class="category-tag" onclick="filterCategory(4)">搞笑</div>
+        </div>
+
+        <!-- 漫画列表 -->
+        <div class="comic-grid" id="comicGrid">
+            <div class="loading-spinner">
+                <i class="fas fa-spinner fa-spin"></i> 加载中...
+            </div>
+        </div>
+    </div>
+
+    <!-- 漫画详情模态框 -->
+    <div class="modal" id="detailModal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal('detailModal')">&times;</span>
+            <img src="" alt="Cover" class="modal-cover" id="detailCover">
+            <div class="modal-details">
+                <h2 id="detailTitle" style="margin-bottom: 0.5rem;">漫画标题</h2>
+                <p id="detailAuthor" style="color: #666; margin-bottom: 1rem;">作者：未知</p>
+                <div class="comic-meta" style="margin-bottom: 1rem;">
+                    <span id="detailStatus" class="status-badge" style="position: static; display: inline-block;">连载中</span>
+                    <span id="detailTime" style="margin-left: 10px; color: #999;"></span>
                 </div>
-                <div id="health-result" class="result"></div>
-            </div>
-        </section>
+                <p id="detailDesc" style="margin-bottom: 1.5rem; line-height: 1.6;">漫画简介...</p>
 
-        <!-- 漫画管理 -->
-        <section class="section">
-            <h2>📖 漫画管理</h2>
-            
-            <div class="api-test">
-                <h3>获取漫画列表</h3>
-                <div class="test-controls">
-                    <input type="text" id="search-keyword" placeholder="搜索关键词（可选）">
-                    <button onclick="getComics()">获取漫画列表</button>
+                <h3>章节列表</h3>
+                <div class="chapter-list" id="chapterList">
+                    <!-- 章节项 -->
                 </div>
-                <div id="comics-result" class="result"></div>
             </div>
+        </div>
+    </div>
 
-            <div class="api-test">
-                <h3>获取漫画详情</h3>
-                <div class="test-controls">
-                    <input type="number" id="comic-id" placeholder="输入漫画ID" value="1">
-                    <button onclick="getComicDetail()">获取漫画详情</button>
-                </div>
-                <div id="comic-detail-result" class="result"></div>
-            </div>
-        </section>
+    <!-- 阅读器 -->
+    <div class="reader-container" id="readerContainer">
+        <div class="reader-toolbar">
+            <span onclick="closeReader()" style="cursor: pointer;"><i class="fas fa-arrow-left"></i> 返回详情</span>
+            <span id="readerTitle">章节标题</span>
+            <span><i class="fas fa-cog"></i></span>
+        </div>
+        <div class="reader-content" id="readerContent">
+            <!-- 图片列表 -->
+        </div>
+        <div class="reader-nav">
+            <button class="nav-btn" id="prevChapterBtn" onclick="prevChapter()"><i class="fas fa-chevron-left"></i> 上一章</button>
+            <button class="nav-btn" id="nextChapterBtn" onclick="nextChapter()">下一章 <i class="fas fa-chevron-right"></i></button>
+        </div>
+    </div>
 
-        <!-- 漫画列表展示 -->
-        <section class="section">
-            <h2>🎨 漫画展示</h2>
-            <div id="comics-display" class="comic-grid">
-                <div class="loading">点击"获取漫画列表"加载数据...</div>
+    <!-- 登录模态框 -->
+    <div class="modal" id="loginModal">
+        <div class="modal-content login-modal" style="width: 400px; height: auto;">
+            <span class="close-modal" onclick="closeModal('loginModal')">&times;</span>
+            <h2 style="text-align: center; margin-bottom: 2rem;">欢迎回来</h2>
+            <div class="form-group">
+                <label>用户名</label>
+                <input type="text" class="form-input" placeholder="请输入用户名">
             </div>
-        </section>
-
-        <!-- 章节管理 -->
-        <section class="section">
-            <h2>📑 章节管理</h2>
-            
-            <div class="api-test">
-                <h3>获取漫画章节</h3>
-                <div class="test-controls">
-                    <input type="number" id="chapter-comic-id" placeholder="漫画ID" value="1">
-                    <button onclick="getChapters()">获取章节列表</button>
-                </div>
-                <div id="chapters-result" class="result"></div>
+            <div class="form-group">
+                <label>密码</label>
+                <input type="password" class="form-input" placeholder="请输入密码">
             </div>
-        </section>
+            <button class="btn-primary" onclick="alert('登录功能开发中')">登 录</button>
+            <p style="text-align: center; margin-top: 1rem; font-size: 0.9rem;">
+                还没有账号？ <a href="#" style="color: var(--primary-color);">立即注册</a>
+            </p>
+        </div>
     </div>
 
     <script>
-        const API_BASE = 'http://localhost:8080/api';
-        
-        // 通用请求函数
-        async function apiRequest(endpoint, options = {}) {
-            const url = `${API_BASE}${endpoint}`;
+        const API_BASE = '/api';
+        let currentComicId = null;
+        let currentChapterId = null;
+        let currentNav = null; // 存储当前章节的导航信息
+
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', () => {
+            loadComics();
+        });
+
+        // 加载漫画列表
+        async function loadComics(keyword = '') {
+            const grid = document.getElementById('comicGrid');
+            grid.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> 加载中...</div>';
+
             try {
-                const response = await fetch(url, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...options.headers
-                    },
-                    ...options
-                });
-                
-                const data = await response.json();
-                return { success: true, data, status: response.status };
+                let url = `${API_BASE}/comics/list`;
+                if (keyword) {
+                    url += `?keyword=${encodeURIComponent(keyword)}`;
+                }
+
+                const response = await fetch(url);
+                const result = await response.json();
+
+                // 修正：后端成功状态码是 1
+                if (result.code === 1) {
+                    // 修正：数据结构解析
+                    // result.data 可能是 { total: 8, list: [...] }
+                    let comics = [];
+                    if (result.data && result.data.list) {
+                        comics = result.data.list;
+                    } else if (Array.isArray(result.data)) {
+                        comics = result.data;
+                    }
+                    renderComics(comics);
+                } else {
+                    grid.innerHTML = `<div class="error-message">加载失败: ${result.msg || '未知错误'}</div>`;
+                }
             } catch (error) {
-                return { success: false, error: error.message };
+                console.error('Error:', error);
+                grid.innerHTML = '<div class="error-message">网络错误，请稍后重试</div>';
             }
         }
-        
-        // 显示结果
-        function displayResult(elementId, result, isSuccess = true) {
-            const element = document.getElementById(elementId);
-            element.className = `result ${isSuccess ? 'success' : 'error'}`;
-            element.innerHTML = `<pre>${JSON.stringify(result, null, 2)}</pre>`;
-        }
-        
-        // 测试健康检查
-        async function testHealth() {
-            const resultElement = document.getElementById('health-result');
-            resultElement.innerHTML = '<div class="loading">检查服务状态中...</div>';
-            
-            const result = await apiRequest('/health');
-            displayResult('health-result', result, result.success);
-        }
-        
-        // 获取漫画列表
-        async function getComics() {
-            const keyword = document.getElementById('search-keyword').value;
-            const resultElement = document.getElementById('comics-result');
-            resultElement.innerHTML = '<div class="loading">加载漫画列表中...</div>';
-            
-            let endpoint = '/comics';
-            if (keyword) {
-                endpoint += `?keyword=${encodeURIComponent(keyword)}`;
-            }
-            
-            const result = await apiRequest(endpoint);
-            displayResult('comics-result', result, result.success);
-            
-            // 同时更新漫画展示区域
-            if (result.success && result.data && result.data.data) {
-                displayComics(result.data.data.list || []);
-            }
-        }
-        
-        // 获取漫画详情
-        async function getComicDetail() {
-            const comicId = document.getElementById('comic-id').value;
-            if (!comicId) {
-                alert('请输入漫画ID');
-                return;
-            }
-            
-            const resultElement = document.getElementById('comic-detail-result');
-            resultElement.innerHTML = '<div class="loading">加载漫画详情中...</div>';
-            
-            const result = await apiRequest(`/comics/${comicId}`);
-            displayResult('comic-detail-result', result, result.success);
-        }
-        
-        // 获取章节列表
-        async function getChapters() {
-            const comicId = document.getElementById('chapter-comic-id').value;
-            if (!comicId) {
-                alert('请输入漫画ID');
-                return;
-            }
-            
-            const resultElement = document.getElementById('chapters-result');
-            resultElement.innerHTML = '<div class="loading">加载章节列表中...</div>';
-            
-            const result = await apiRequest(`/chapters/comic/${comicId}`);
-            displayResult('chapters-result', result, result.success);
-        }
-        
-        // 显示漫画卡片
-        function displayComics(comics) {
-            const container = document.getElementById('comics-display');
-            
+
+        function renderComics(comics) {
+            const grid = document.getElementById('comicGrid');
             if (!comics || comics.length === 0) {
-                container.innerHTML = '<div class="loading">没有找到漫画</div>';
+                grid.innerHTML = '<div class="error-message">暂无漫画数据</div>';
                 return;
             }
-            
-            container.innerHTML = comics.map(comic => `
-                <div class="comic-card" onclick="viewComicDetail(${comic.id})">
-                    <img src="${comic.coverImage || '/images/default-cover.jpg'}" 
-                         alt="${comic.title}" 
-                         class="comic-cover"
-                         onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuWbvuWDj+WbvuiusDwvdGV4dD48L3N2Zz4='">
-                    <div class="comic-info">
-                        <div class="comic-title">${comic.title}</div>
-                        <div class="comic-author">${comic.author || '未知作者'}</div>
-                        <span class="status ${comic.status === 1 ? 'status-ongoing' : 'status-completed'}">
+
+            grid.innerHTML = comics.map(comic => `
+                <div class="comic-card" onclick="showDetail(${comic.id})">
+                    <div class="comic-cover-wrapper">
+                        <img src="${comic.coverImage || '/images/default-cover.jpg'}"
+                             class="comic-cover"
+                             alt="${comic.title}"
+                             onerror="this.src='https://via.placeholder.com/200x280?text=No+Image'">
+                        <span class="status-badge" style="background: ${comic.status === 1 ? '#4ecdc4' : '#ff6b6b'}">
                             ${comic.status === 1 ? '连载中' : '已完结'}
                         </span>
+                    </div>
+                    <div class="comic-info">
+                        <div class="comic-title">${comic.title}</div>
+                        <div class="comic-meta">
+                            <span>${comic.author || '未知作者'}</span>
+                        </div>
                     </div>
                 </div>
             `).join('');
         }
-        
-        // 查看漫画详情
-        function viewComicDetail(comicId) {
-            document.getElementById('comic-id').value = comicId;
-            getComicDetail();
+
+        // 显示详情
+        async function showDetail(id) {
+            currentComicId = id;
+            const modal = document.getElementById('detailModal');
+            
+            try {
+                // 并行请求漫画详情和章节列表
+                const [detailRes, chaptersRes] = await Promise.all([
+                    fetch(`${API_BASE}/comics/${id}`).then(r => r.json()),
+                    fetch(`${API_BASE}/chapters/comic/${id}`).then(r => r.json())
+                ]);
+
+                if (detailRes.code === 1) {
+                    const comic = detailRes.data;
+                    document.getElementById('detailTitle').innerText = comic.title;
+                    document.getElementById('detailAuthor').innerText = `作者：${comic.author || '未知'}`;
+                    document.getElementById('detailDesc').innerText = comic.description || '暂无简介';
+                    document.getElementById('detailCover').src = comic.coverImage || 'https://via.placeholder.com/300x420?text=No+Image';
+                    document.getElementById('detailStatus').innerText = comic.status === 1 ? '连载中' : '已完结';
+                    document.getElementById('detailStatus').style.background = comic.status === 1 ? '#4ecdc4' : '#ff6b6b';
+
+                    if (comic.updateTime) {
+                        document.getElementById('detailTime').innerText = '更新于 ' + new Date(comic.updateTime).toLocaleDateString();
+                    }
+                }
+
+                if (chaptersRes.code === 1) {
+                    const chapters = chaptersRes.data;
+                    const listEl = document.getElementById('chapterList');
+                    if (chapters && chapters.length > 0) {
+                        listEl.innerHTML = chapters.map(ch => `
+                            <div class="chapter-item" onclick="openReader(${ch.id})">
+                                ${ch.title}
+                            </div>
+                        `).join('');
+                    } else {
+                        listEl.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #999;">暂无章节</div>';
+                    }
+                }
+
+                modal.classList.add('active');
+            } catch (error) {
+                console.error('Error:', error);
+                alert('加载详情失败');
+            }
         }
-        
-        // 页面加载时自动测试健康状态
-        window.onload = function() {
-            testHealth();
-        };
+
+        // 打开阅读器
+        async function openReader(chapterId) {
+            currentChapterId = chapterId;
+            const container = document.getElementById('readerContainer');
+            const content = document.getElementById('readerContent');
+
+            container.classList.add('active');
+            content.innerHTML = '<div class="loading-spinner" style="color: white;"><i class="fas fa-spinner fa-spin"></i> 加载中...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE}/chapters/${chapterId}/read`);
+                const result = await response.json();
+
+                if (result.code === 1) {
+                    const data = result.data;
+                    const chapter = data.currentChapter;
+
+                    document.getElementById('readerTitle').innerText = chapter.title;
+
+                    // 渲染图片
+                    if (data.pages && data.pages.length > 0) {
+                        content.innerHTML = data.pages.map(page => `
+                            <img src="${page.imageUrl}" class="reader-page" loading="lazy" alt="Page ${page.pageNumber}">
+                        `).join('');
+                    } else {
+                        content.innerHTML = '<div style="text-align: center; color: white; padding: 50px;">本章暂无图片</div>';
+                    }
+
+                    // 更新导航状态
+                    currentNav = chapter.nav;
+                    updateNavButtons();
+                } else {
+                    content.innerHTML = `<div style="text-align: center; color: white;">${result.msg}</div>`;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                content.innerHTML = '<div style="text-align: center; color: white;">加载失败</div>';
+            }
+        }
+
+        function updateNavButtons() {
+            const prevBtn = document.getElementById('prevChapterBtn');
+            const nextBtn = document.getElementById('nextChapterBtn');
+
+            if (currentNav && currentNav.prevChapterId) {
+                prevBtn.disabled = false;
+                prevBtn.onclick = () => openReader(currentNav.prevChapterId);
+            } else {
+                prevBtn.disabled = true;
+            }
+
+            if (currentNav && currentNav.nextChapterId) {
+                nextBtn.disabled = false;
+                nextBtn.onclick = () => openReader(currentNav.nextChapterId);
+            } else {
+                nextBtn.disabled = true;
+            }
+        }
+
+        function prevChapter() {
+            if (currentNav && currentNav.prevChapterId) {
+                openReader(currentNav.prevChapterId);
+            }
+        }
+
+        function nextChapter() {
+            if (currentNav && currentNav.nextChapterId) {
+                openReader(currentNav.nextChapterId);
+            }
+        }
+
+        function closeReader() {
+            document.getElementById('readerContainer').classList.remove('active');
+            // 恢复滚动条位置
+            document.getElementById('readerContainer').scrollTop = 0;
+        }
+
+        function showLogin() {
+            document.getElementById('loginModal').classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function showHome() {
+            closeReader();
+            closeModal('detailModal');
+            closeModal('loginModal');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            loadComics(); // 刷新列表
+        }
+
+        function handleSearch(e) {
+            if (e.key === 'Enter') {
+                const val = e.target.value;
+                loadComics(val);
+            }
+        }
+
+        function filterCategory(categoryId) {
+            // 简单的 UI 切换，实际应该调用带 categoryId 的 API
+            document.querySelectorAll('.category-tag').forEach(el => el.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // 这里暂时只做演示，实际需要后端支持分类查询
+            alert('分类筛选功能待后端支持');
+        }
+
+        // 点击模态框外部关闭
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.classList.remove('active');
+            }
+        }
     </script>
 </body>
 </html>

@@ -1,10 +1,9 @@
 package com.comic.reader.controller;
-// 需要添加这个import语句
-import com.comic.reader.Service.ComicService;
+
+import com.comic.reader.service.ComicService;
 import com.comic.reader.dto.ComicRequest;
 import com.comic.reader.dto.ComicResponse;
 import com.comic.reader.dto.query.ComicQuery;
-import com.comic.reader.dto.response.ComicDetailResponse;
 import com.comic.reader.util.page.PageResult;
 import com.comic.reader.util.Result;
 import lombok.extern.slf4j.Slf4j;
@@ -20,13 +19,24 @@ public class ComicController {
     private ComicService comicService;
 
     @GetMapping("/list")         // 漫画列表
-    public Result listComics(@RequestParam(required = false)ComicQuery comicQuery) {
-
+    // 去掉 @RequestParam，因为 ComicQuery 是一个对象，Spring 会自动尝试从查询参数中绑定字段
+    // 如果加上 @RequestParam，Spring 会试图寻找名为 "comicQuery" 的参数，或者需要自定义转换器
+    // 对于对象参数绑定，通常不加注解，或者使用 @ModelAttribute
+    public Result listComics(ComicQuery comicQuery) {
         try {
+            // 如果参数为空，创建一个默认对象
+            if (comicQuery == null) {
+                comicQuery = new ComicQuery();
+            }
+            // 确保分页参数有默认值 (虽然 ComicQuery 类定义里有默认值，但为了保险起见)
+            if (comicQuery.getPageNum() == null) comicQuery.setPageNum(1);
+            if (comicQuery.getPageSize() == null) comicQuery.setPageSize(10);
+
             PageResult<ComicResponse> comics = comicService.getComics(comicQuery);
             return Result.success(comics);
         } catch (Exception e) {
-            return Result.error("漫画列表获取失败"+ e.getMessage());
+            log.error("获取漫画列表失败", e);
+            return Result.error("漫画列表获取失败: " + e.getMessage());
         }
     }
 
@@ -34,11 +44,11 @@ public class ComicController {
     public Result getComicDetail(@PathVariable Long id) {
         log.info("获取漫画详情: {}", id);
         try {
-            comicService.getComicDetail(id);
             return Result.success(comicService.getComicDetail(id));
         }
         catch (Exception e) {
-            return Result.error("漫画详情获取失败"+ e.getMessage());
+            log.error("获取漫画详情失败", e);
+            return Result.error("漫画详情获取失败: "+ e.getMessage());
         }
     }
 

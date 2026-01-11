@@ -1,4 +1,4 @@
-package com.comic.reader.Service;
+package com.comic.reader.service;
 
 import com.comic.reader.dto.ComicRequest;
 import com.comic.reader.dto.ComicResponse;
